@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宿曜計算テスト（DBベース）- 本命宿・相性</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    .status {
+      text-align: center;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .status.loading {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .status.ready {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .result {
+      margin-top: 30px;
+      padding: 30px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: none;
+    }
+    .result.show {
+      display: block;
+    }
+    .shuku-name {
+      font-size: 48px;
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .shuku-reading {
+      text-align: center;
+      color: #888;
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .detail {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+    .detail p {
+      margin: 8px 0;
+    }
+    .detail strong {
+      color: #333;
+    }
+    .ganshi-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .ganshi-item {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      background: #fff;
+      border-radius: 6px;
+      border: 1px solid #eee;
+    }
+    .ganshi-label {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 5px;
+    }
+    .ganshi-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    /* 相性セクション */
+    .section-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      margin: 40px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+    .person-inputs {
+      display: flex;
+      gap: 20px;
+    }
+    .person-input {
+      flex: 1;
+    }
+    .person-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .compatibility-result {
+      margin-top: 30px;
+      padding: 30px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: none;
+    }
+    .compatibility-result.show {
+      display: block;
+    }
+    .compat-header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .compat-person {
+      text-align: center;
+    }
+    .compat-shuku {
+      font-size: 28px;
+      font-weight: bold;
+      color: #333;
+    }
+    .compat-arrow {
+      font-size: 24px;
+      color: #667eea;
+    }
+    .compat-type {
+      font-size: 36px;
+      text-align: center;
+      font-weight: bold;
+      color: #667eea;
+      margin: 20px 0;
+    }
+    .compat-distance {
+      text-align: center;
+      font-size: 18px;
+      color: #888;
+      margin-bottom: 15px;
+    }
+    .compat-detail {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .compat-role {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+    .compat-role.person1 {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+    .compat-role.person2 {
+      background: #fce4ec;
+      color: #c2185b;
+    }
+    .compat-description {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #666;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>宿曜計算テスト</h1>
+  
+  <div class="status loading" id="status">
+    データベース読み込み中...
+  </div>
+  
+  <div class="section-title">本命宿を調べる</div>
+  
+  <div class="form-group">
+    <label>生年月日</label>
+    <input type="date" id="birthdate" value="1994-02-21" min="1900-01-01" max="2099-12-31">
+  </div>
+  
+  <button onclick="calculate()" id="calcBtn" disabled>本命宿を計算</button>
+  
+  <div class="result" id="result">
+    <div class="shuku-name" id="shukuName"></div>
+    <div class="shuku-reading" id="shukuReading"></div>
+    <div class="detail">
+      <p><strong>旧暦:</strong> <span id="lunarDate"></span></p>
+      <div class="ganshi-group">
+        <div class="ganshi-item">
+          <div class="ganshi-label">年干支</div>
+          <div class="ganshi-value" id="yearGanshi"></div>
+        </div>
+        <div class="ganshi-item">
+          <div class="ganshi-label">月干支</div>
+          <div class="ganshi-value" id="monthGanshi"></div>
+        </div>
+        <div class="ganshi-item">
+          <div class="ganshi-label">日干支</div>
+          <div class="ganshi-value" id="dayGanshi"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 相性セクション -->
+  <div class="section-title">相性を調べる</div>
+  
+  <div class="form-group">
+    <div class="person-inputs">
+      <div class="person-input">
+        <div class="person-label">自分の生年月日</div>
+        <input type="date" id="person1Date" value="1994-02-21" min="1900-01-01" max="2099-12-31">
+      </div>
+      <div class="person-input">
+        <div class="person-label">相手の生年月日</div>
+        <input type="date" id="person2Date" value="1990-01-01" min="1900-01-01" max="2099-12-31">
+      </div>
+    </div>
+  </div>
+  
+  <button onclick="calculateCompatibility()" id="compatBtn" disabled>相性を計算</button>
+  
+  <div class="compatibility-result" id="compatibilityResult">
+    <div class="compat-header">
+      <div class="compat-person">
+        <div class="compat-shuku" id="compatShuku1"></div>
+        <div style="font-size: 12px; color: #888;">自分</div>
+      </div>
+      <div class="compat-arrow">×</div>
+      <div class="compat-person">
+        <div class="compat-shuku" id="compatShuku2"></div>
+        <div style="font-size: 12px; color: #888;">相手</div>
+      </div>
+    </div>
+    <div class="compat-type" id="compatType"></div>
+    <div class="compat-distance" id="compatDistance"></div>
+    <div class="compat-detail">
+      <span class="compat-role person1" id="compatRole1"></span>
+      <span class="compat-role person2" id="compatRole2"></span>
+    </div>
+    <div class="compat-description" id="compatDescription"></div>
+  </div>
+
+  <script>
+    // 27宿の読み方
+    const SHUKU_READINGS = {
+      '昴宿': 'ぼうしゅく',
+      '畢宿': 'ひっしゅく',
+      '觜宿': 'ししゅく',
+      '参宿': 'しんしゅく',
+      '井宿': 'せいしゅく',
+      '鬼宿': 'きしゅく',
+      '柳宿': 'りゅうしゅく',
+      '星宿': 'せいしゅく',
+      '張宿': 'ちょうしゅく',
+      '翼宿': 'よくしゅく',
+      '軫宿': 'しんしゅく',
+      '角宿': 'かくしゅく',
+      '亢宿': 'こうしゅく',
+      '氐宿': 'ていしゅく',
+      '房宿': 'ぼうしゅく',
+      '心宿': 'しんしゅく',
+      '尾宿': 'びしゅく',
+      '箕宿': 'きしゅく',
+      '斗宿': 'としゅく',
+      '女宿': 'じょしゅく',
+      '虚宿': 'きょしゅく',
+      '危宿': 'きしゅく',
+      '室宿': 'しつしゅく',
+      '壁宿': 'へきしゅく',
+      '奎宿': 'けいしゅく',
+      '婁宿': 'ろうしゅく',
+      '胃宿': 'いしゅく',
+    };
+
+    let calendarDB = null;
+
+    // DBを読み込む
+    async function loadDatabase() {
+      const statusEl = document.getElementById('status');
+      const calcBtn = document.getElementById('calcBtn');
+      
+      try {
+        const response = await fetch('./data/calendar-db.json');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        calendarDB = await response.json();
+        
+        const recordCount = Object.keys(calendarDB).length;
+        statusEl.textContent = `データベース読み込み完了（${recordCount.toLocaleString()}件）`;
+        statusEl.className = 'status ready';
+        calcBtn.disabled = false;
+        document.getElementById('compatBtn').disabled = false;
+      } catch (e) {
+        statusEl.textContent = `エラー: ${e.message}`;
+        statusEl.className = 'status error';
+        console.error('DB読み込みエラー:', e);
+      }
+    }
+
+    // 計算実行
+    function calculate() {
+      if (!calendarDB) {
+        alert('データベースが読み込まれていません');
+        return;
+      }
+
+      const dateStr = document.getElementById('birthdate').value;
+      const data = calendarDB[dateStr];
+
+      if (!data) {
+        alert(`${dateStr} のデータが見つかりません。\n対応範囲: 1900-01-01 〜 2099-12-31`);
+        return;
+      }
+
+      // 結果を表示
+      document.getElementById('shukuName').textContent = data.s;
+      document.getElementById('shukuReading').textContent = SHUKU_READINGS[data.s] || '';
+      document.getElementById('lunarDate').textContent = formatLunarDate(data.l);
+      document.getElementById('yearGanshi').textContent = data.y;
+      document.getElementById('monthGanshi').textContent = data.m;
+      document.getElementById('dayGanshi').textContent = data.d;
+      
+      document.getElementById('result').classList.add('show');
+    }
+
+    // 旧暦日付をフォーマット
+    function formatLunarDate(lunarStr) {
+      // "1994-01-12" or "2020-閏04-01" 形式
+      const match = lunarStr.match(/^(\d+)-(閏)?(\d+)-(\d+)$/);
+      if (match) {
+        const [, year, leap, month, day] = match;
+        return `${year}年${leap || ''}${parseInt(month)}月${parseInt(day)}日`;
+      }
+      return lunarStr;
+    }
+
+    // ========== 相性計算 ==========
+    
+    // 27宿の配列（宿曜盤の順序：反時計回り）
+    const SHUKU_ORDER = [
+      '昴宿', '畢宿', '觜宿', '参宿', '井宿', '鬼宿', '柳宿', '星宿', '張宿',
+      '翼宿', '軫宿', '角宿', '亢宿', '氐宿', '房宿', '心宿', '尾宿', '箕宿',
+      '斗宿', '女宿', '虚宿', '危宿', '室宿', '壁宿', '奎宿', '婁宿', '胃宿'
+    ];
+    
+    // 三九の秘法：自分の宿を0として、相手の宿との距離から関係を判定
+    // 距離 → [関係タイプ, 自分の立場, 相手の立場, 距離区分]
+    const HIHO_MAP = {
+      0:  ['命', '命', '命', null],
+      1:  ['栄親', '栄', '親', '近距離'],
+      2:  ['友衰', '衰', '友', '近距離'],
+      3:  ['安壊', '安', '壊', '近距離'],
+      4:  ['危成', '危', '成', '近距離'],
+      5:  ['危成', '成', '危', '近距離'],
+      6:  ['安壊', '壊', '安', '近距離'],
+      7:  ['友衰', '友', '衰', '近距離'],
+      8:  ['栄親', '親', '栄', '近距離'],
+      9:  ['業胎', '業', '胎', null],
+      10: ['栄親', '栄', '親', '中距離'],
+      11: ['友衰', '衰', '友', '中距離'],
+      12: ['安壊', '安', '壊', '中距離'],
+      13: ['危成', '危', '成', '中距離'],
+      14: ['危成', '成', '危', '中距離'],
+      15: ['安壊', '壊', '安', '中距離'],
+      16: ['友衰', '友', '衰', '中距離'],
+      17: ['栄親', '親', '栄', '中距離'],
+      18: ['業胎', '胎', '業', null],
+      19: ['栄親', '栄', '親', '遠距離'],
+      20: ['友衰', '衰', '友', '遠距離'],
+      21: ['安壊', '安', '壊', '遠距離'],
+      22: ['危成', '危', '成', '遠距離'],
+      23: ['危成', '成', '危', '遠距離'],
+      24: ['安壊', '壊', '安', '遠距離'],
+      25: ['友衰', '友', '衰', '遠距離'],
+      26: ['栄親', '親', '栄', '遠距離'],
+    };
+    
+    // 相性タイプの説明
+    const COMPAT_DESCRIPTIONS = {
+      '命': '同じ宿同士の特別な縁。深い理解と強い絆で結ばれますが、似すぎているがゆえの衝突も。',
+      '業胎': '前世と来世で繋がる因縁の関係。業は過去からの縁、胎は未来への縁を示します。',
+      '栄親': '互いに高め合える最良の相性。栄は相手から繁栄をもたらされ、親は相手に親しみを感じます。',
+      '友衰': '友人として良好な関係。友は相手を助け、衰は相手から助けられる関係です。',
+      '安壊': '波乱に富んだ関係。安は相手に安らぎを感じ、壊は相手に振り回されることも。',
+      '危成': '刺激的な関係。危は相手に危機感を、成は相手に達成感をもたらします。',
+    };
+    
+    // 相性を計算
+    function calculateCompatibility() {
+      if (!calendarDB) {
+        alert('データベースが読み込まれていません');
+        return;
+      }
+      
+      const date1 = document.getElementById('person1Date').value;
+      const date2 = document.getElementById('person2Date').value;
+      
+      const data1 = calendarDB[date1];
+      const data2 = calendarDB[date2];
+      
+      if (!data1 || !data2) {
+        alert('日付のデータが見つかりません。\n対応範囲: 1900-01-01 〜 2099-12-31');
+        return;
+      }
+      
+      const shuku1 = data1.s;
+      const shuku2 = data2.s;
+      
+      // 宿のインデックスを取得
+      const idx1 = SHUKU_ORDER.indexOf(shuku1);
+      const idx2 = SHUKU_ORDER.indexOf(shuku2);
+      
+      // 距離を計算（person1から見たperson2の位置）
+      let distance = (idx2 - idx1 + 27) % 27;
+      
+      const hiho = HIHO_MAP[distance];
+      const [type, role1, role2, distanceLabel] = hiho;
+      
+      // 結果を表示
+      document.getElementById('compatShuku1').textContent = shuku1;
+      document.getElementById('compatShuku2').textContent = shuku2;
+      document.getElementById('compatType').textContent = type;
+      document.getElementById('compatDistance').textContent = distanceLabel ? `（${distanceLabel}）` : '';
+      document.getElementById('compatRole1').textContent = `自分：${role1}`;
+      document.getElementById('compatRole2').textContent = `相手：${role2}`;
+      document.getElementById('compatDescription').textContent = COMPAT_DESCRIPTIONS[type];
+      
+      document.getElementById('compatibilityResult').classList.add('show');
+    }
+    
+    // 初期化
+    loadDatabase();
+  </script>
+</body>
+</html>
