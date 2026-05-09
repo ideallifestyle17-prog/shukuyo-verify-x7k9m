@@ -612,17 +612,17 @@
         total[g] = count1[g] + count2[g];
       });
       
-      // 最大値（2人×6ポイント÷5五行 = 2.4が理想的均等）
-      const maxValue = 6; // 片方の最大（1つの五行に全集中）
+      // 最大値（4に固定、それ以上ははみ出す）
+      const maxValue = 4;
       
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       // 背景の正五角形（グリッド）
-      for (let level = 1; level <= 6; level++) {
+      for (let level = 1; level <= 4; level++) {
         ctx.beginPath();
         for (let i = 0; i < 5; i++) {
           const angle = (i * 72 - 90) * Math.PI / 180;
-          const r = (maxRadius / 6) * level;
+          const r = (maxRadius / 4) * level;
           const x = centerX + r * Math.cos(angle);
           const y = centerY + r * Math.sin(angle);
           if (i === 0) ctx.moveTo(x, y);
