@@ -551,6 +551,8 @@
     
     // 五行相性計算
     function calculateGogyoCompat() {
+      console.log('calculateGogyoCompat 開始');
+      
       if (!calendarDB) {
         alert('データベースが読み込まれていません');
         return;
@@ -559,8 +561,12 @@
       const date1 = document.getElementById('gogyo1Date').value;
       const date2 = document.getElementById('gogyo2Date').value;
       
+      console.log('日付:', date1, date2);
+      
       const data1 = calendarDB[date1];
       const data2 = calendarDB[date2];
+      
+      console.log('データ:', data1, data2);
       
       if (!data1 || !data2) {
         alert('日付のデータが見つかりません。\n対応範囲: 1900-01-01 〜 2099-12-31');
@@ -698,7 +704,7 @@
     // 新しい五行相性計算（3項目合計100点）
     function calculateNewGogyoScore(data1, data2, count1, count2) {
       // 五行相性（50点）
-      const gogyoScore = calculateGogyoCompat(data1, data2, count1, count2);
+      const gogyoScore = calculateGogyoRelationScore(data1, data2, count1, count2);
       
       // 日干相性（30点）
       const niganScore = calculateNiganCompat(data1, data2);
@@ -722,7 +728,14 @@
     }
     
     // 五行相性（50点）
-    function calculateGogyoCompat(data1, data2, count1, count2) {
+    function calculateGogyoRelationScore(data1, data2, count1, count2) {
+      console.log('calculateGogyoRelationScore:', data1, data2, count1, count2);
+      
+      if (!data1 || !data2 || !data1.d || !data2.d) {
+        console.error('データが不足しています:', data1, data2);
+        return 0;
+      }
+      
       // ユーザーの日干五行
       const myNiganGogyo = GAN_GOGYO[data1.d[0]];
       // 相手の全体の五行
