@@ -285,27 +285,33 @@
     <div class="shuku-reading" id="shukuReading"></div>
     <div class="detail">
       <p><strong>旧暦:</strong> <span id="lunarDate"></span></p>
-      <table class="gogyo-table">
-        <tr>
-          <th></th>
-          <th>日柱</th>
-          <th>月柱</th>
-          <th>年柱</th>
-        </tr>
-        <tr>
-          <th class="row-header">干</th>
-          <td id="dayGan"></td>
-          <td id="monthGan"></td>
-          <td id="yearGan"></td>
-        </tr>
-        <tr>
-          <th class="row-header">支</th>
-          <td id="dayShi"></td>
-          <td id="monthShi"></td>
-          <td id="yearShi"></td>
-        </tr>
-      </table>
     </div>
+  </div>
+  
+  <!-- 五行セクション -->
+  <div class="section-title">五行</div>
+  
+  <div class="result show" id="gogyoResult" style="display: none;">
+    <table class="gogyo-table">
+      <tr>
+        <th></th>
+        <th>日柱</th>
+        <th>月柱</th>
+        <th>年柱</th>
+      </tr>
+      <tr>
+        <th class="row-header">干</th>
+        <td id="dayGan"></td>
+        <td id="monthGan"></td>
+        <td id="yearGan"></td>
+      </tr>
+      <tr>
+        <th class="row-header">支</th>
+        <td id="dayShi"></td>
+        <td id="monthShi"></td>
+        <td id="yearShi"></td>
+      </tr>
+    </table>
   </div>
   
   <!-- 相性セクション -->
@@ -431,6 +437,7 @@
       displayGanShi('day', data.d);
       
       document.getElementById('result').classList.add('show');
+      document.getElementById('gogyoResult').style.display = 'block';
     }
     
     // 干 → 五行
