@@ -692,12 +692,142 @@
       ctx.lineWidth = 2;
       ctx.stroke();
       
-      // スコア計算（バランスベース）
-      const maxVal = Math.max(...Object.values(total));
-      const minVal = Math.min(...Object.values(total));
-      const score = Math.round(100 - (maxVal - minVal) * 8);
+      // 新しいスコア計算（3項目合計100点）
+      const scores = calculateNewGogyoScore(data1, data2, count1, count2);
       
-      return Math.min(100, Math.max(0, score));
+      return scores.total;
+    }
+    
+    // 新しい五行相性計算（3項目合計100点）
+    function calculateNewGogyoScore(data1, data2, count1, count2) {
+      // 五行相性（50点）
+      const gogyoScore = calculateGogyoCompat(data1, data2, count1, count2);
+      
+      // 日干相性（30点）
+      const niganScore = calculateNiganCompat(data1, data2);
+      
+      // 不足五行補完（20点）
+      const deficiencyScore = calculateDeficiencyCompat(count1, count2);
+      
+      const total = gogyoScore + niganScore + deficiencyScore;
+      
+      // 内訳を表示
+      document.getElementById('gogyoScore').innerHTML = `
+        <div style="font-size: 48px; font-weight: bold; color: #667eea;">${total}点</div>
+        <div style="font-size: 12px; color: #888; margin-top: 10px;">
+          五行相性: ${gogyoScore}/50点<br>
+          日干相性: ${niganScore}/30点<br>
+          不足補完: ${deficiencyScore}/20点
+        </div>
+      `;
+      
+      return { total, gogyoScore, niganScore, deficiencyScore };
+    }
+    
+    // 五行相性（50点）
+    function calculateGogyoCompat(data1, data2, count1, count2) {
+      // ユーザーの日干五行
+      const myNiganGogyo = GAN_GOGYO[data1.d[0]];
+      // 相手の全体の五行
+      const partnerGogyo = count2;
+      
+      // 相手の日干五行
+      const partnerNiganGogyo = GAN_GOGYO[data2.d[0]];
+      // ユーザーの全体の五行
+      const myGogyo = count1;
+      
+      let totalScore = 0;
+      
+      // ユーザー日干 × 相手全体
+      Object.keys(partnerGogyo).forEach(g => {
+        const count = partnerGogyo[g];
+        totalScore += getGogyoRelationScore(myNiganGogyo, g) * count;
+      });
+      
+      // 相手日干 × ユーザー全体
+      Object.keys(myGogyo).forEach(g => {
+        const count = myGogyo[g];
+        totalScore += getGogyoRelationScore(partnerNiganGogyo, g) * count;
+      });
+      
+      // 0〜50に正規化
+      // 最大値は（自分日干が相手全体6つ全部相生で+2×6=12）+（相手日干が自分全体6つ全部相生で+2×6=12）= 24
+      const maxScore = 24;
+      const normalizedScore = Math.round((totalScore / maxScore) * 50);
+      
+      return Math.min(50, Math.max(0, normalizedScore));
+    }
+    
+    // 五行関係のスコア
+    function getGogyoRelationScore(gogyo1, gogyo2) {
+      if (gogyo1 === gogyo2) return 1; // 同じ五行
+      
+      // 相生（右回り）
+      const sosei = {
+        '木': '火',
+        '火': '土',
+        '土': '金',
+        '金': '水',
+        '水': '木'
+      };
+      if (sosei[gogyo1] === gogyo2) return 2; // 相生
+      if (sosei[gogyo2] === gogyo1) return 2; // 逆も相生
+      
+      // 相剋
+      const sokoku = {
+        '木': '土',
+        '土': '水',
+        '水': '火',
+        '火': '金',
+        '金': '木'
+      };
+      if (sokoku[gogyo1] === gogyo2 || sokoku[gogyo2] === gogyo1) return -2;
+      
+      return 0; // 無関係
+    }
+    
+    // 日干相性（30点）
+    function calculateNiganCompat(data1, data2) {
+      const nigan1 = GAN_GOGYO[data1.d[0]];
+      const nigan2 = GAN_GOGYO[data2.d[0]];
+      
+      if (nigan1 === nigan2) return 25; // 同じ五行
+      
+      // 相生
+      const sosei = {
+        '木': '火',
+        '火': '土',
+        '土': '金',
+        '金': '水',
+        '水': '木'
+      };
+      if (sosei[nigan1] === nigan2 || sosei[nigan2] === nigan1) return 30;
+      
+      // 相剋
+      const sokoku = {
+        '木': '土',
+        '土': '水',
+        '水': '火',
+        '火': '金',
+        '金': '木'
+      };
+      if (sokoku[nigan1] === nigan2 || sokoku[nigan2] === nigan1) return 5;
+      
+      return 15; // 無関係
+    }
+    
+    // 不足五行補完（20点）
+    function calculateDeficiencyCompat(count1, count2) {
+      // ユーザーの最も少ない五行
+      const myMinGogyo = Object.keys(count1).reduce((a, b) => count1[a] < count1[b] ? a : b);
+      const myMinCount = count1[myMinGogyo];
+      
+      // 相手がその五行を持っているか
+      const partnerHas = count2[myMinGogyo];
+      
+      if (partnerHas >= 2) return 20;
+      if (partnerHas === 1) return 10;
+      return 0;
     }
 
     // 旧暦日付をフォーマット
