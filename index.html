@@ -288,32 +288,6 @@
     </div>
   </div>
   
-  <!-- 五行セクション -->
-  <div class="section-title">五行</div>
-  
-  <div class="result show" id="gogyoResult" style="display: none;">
-    <table class="gogyo-table">
-      <tr>
-        <th></th>
-        <th>日柱</th>
-        <th>月柱</th>
-        <th>年柱</th>
-      </tr>
-      <tr>
-        <th class="row-header">干</th>
-        <td id="dayGan"></td>
-        <td id="monthGan"></td>
-        <td id="yearGan"></td>
-      </tr>
-      <tr>
-        <th class="row-header">支</th>
-        <td id="dayShi"></td>
-        <td id="monthShi"></td>
-        <td id="yearShi"></td>
-      </tr>
-    </table>
-  </div>
-  
   <!-- 相性セクション -->
   <div class="section-title">相性を調べる</div>
   
@@ -351,6 +325,39 @@
       <span class="compat-role person2" id="compatRole2"></span>
     </div>
     <div class="compat-description" id="compatDescription"></div>
+  </div>
+  
+  <!-- 五行セクション -->
+  <div class="section-title">五行</div>
+  
+  <div class="form-group">
+    <label>生年月日</label>
+    <input type="date" id="gogyoBirthdate" value="1994-02-21" min="1900-01-01" max="2099-12-31">
+  </div>
+  
+  <button onclick="calculateGogyo()" id="gogyoBtn" disabled>五行を計算</button>
+  
+  <div class="result" id="gogyoResult">
+    <table class="gogyo-table">
+      <tr>
+        <th></th>
+        <th>日柱</th>
+        <th>月柱</th>
+        <th>年柱</th>
+      </tr>
+      <tr>
+        <th class="row-header">干</th>
+        <td id="dayGan"></td>
+        <td id="monthGan"></td>
+        <td id="yearGan"></td>
+      </tr>
+      <tr>
+        <th class="row-header">支</th>
+        <td id="dayShi"></td>
+        <td id="monthShi"></td>
+        <td id="yearShi"></td>
+      </tr>
+    </table>
   </div>
 
   <script>
@@ -404,6 +411,7 @@
         statusEl.className = 'status ready';
         calcBtn.disabled = false;
         document.getElementById('compatBtn').disabled = false;
+        document.getElementById('gogyoBtn').disabled = false;
       } catch (e) {
         statusEl.textContent = `エラー: ${e.message}`;
         statusEl.className = 'status error';
@@ -431,13 +439,30 @@
       document.getElementById('shukuReading').textContent = SHUKU_READINGS[data.s] || '';
       document.getElementById('lunarDate').textContent = formatLunarDate(data.l);
       
+      document.getElementById('result').classList.add('show');
+    }
+    
+    // 五行計算
+    function calculateGogyo() {
+      if (!calendarDB) {
+        alert('データベースが読み込まれていません');
+        return;
+      }
+
+      const dateStr = document.getElementById('gogyoBirthdate').value;
+      const data = calendarDB[dateStr];
+
+      if (!data) {
+        alert(`${dateStr} のデータが見つかりません。\n対応範囲: 1900-01-01 〜 2099-12-31`);
+        return;
+      }
+
       // 干支を分離して五行を表示
       displayGanShi('year', data.y);
       displayGanShi('month', data.m);
       displayGanShi('day', data.d);
       
-      document.getElementById('result').classList.add('show');
-      document.getElementById('gogyoResult').style.display = 'block';
+      document.getElementById('gogyoResult').classList.add('show');
     }
     
     // 干 → 五行
