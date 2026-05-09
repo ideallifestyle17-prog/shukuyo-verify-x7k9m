@@ -692,32 +692,10 @@
       ctx.lineWidth = 2;
       ctx.stroke();
       
-      // 面積計算（正五角形の面積公式）
-      const points = gogyoOrder.map((g, i) => {
-        const angle = (i * 72 - 90) * Math.PI / 180;
-        const r = total[g];
-        return { x: r * Math.cos(angle), y: r * Math.sin(angle) };
-      });
-      
-      // シューレースの公式で面積計算
-      let area = 0;
-      for (let i = 0; i < 5; i++) {
-        const j = (i + 1) % 5;
-        area += points[i].x * points[j].y;
-        area -= points[j].x * points[i].y;
-      }
-      area = Math.abs(area) / 2;
-      
-      // 最大面積（各2.4ポイントの正五角形）
-      const idealValue = 12 / 5; // 2.4
-      const maxArea = (5 * idealValue * idealValue * Math.sin(72 * Math.PI / 180)) / 2;
-      
-      // 実際の最大は全て均等に分散した場合
-      // 12ポイントを5で割った2.4が各頂点の値
-      const maxPossibleArea = (5 * Math.pow(12/5, 2) * Math.sin(72 * Math.PI / 180)) / 2;
-      
-      // スコア計算
-      const score = Math.round((area / maxPossibleArea) * 100);
+      // スコア計算（バランスベース）
+      const maxVal = Math.max(...Object.values(total));
+      const minVal = Math.min(...Object.values(total));
+      const score = Math.round(100 - (maxVal - minVal) * 8);
       
       return Math.min(100, Math.max(0, score));
     }
