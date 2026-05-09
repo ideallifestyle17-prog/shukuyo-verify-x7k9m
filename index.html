@@ -579,17 +579,14 @@
       const count1 = countGogyo(data1);
       const count2 = countGogyo(data2);
       
-      // レーダーチャート描画
-      const score = drawGogyoChart(count1, count2);
-      
-      // スコア表示
-      document.getElementById('gogyoScore').textContent = `${score}点`;
+      // レーダーチャート描画（スコア計算を含む）
+      drawGogyoChart(data1, data2, count1, count2);
       
       document.getElementById('gogyoResult').classList.add('show');
     }
     
     // レーダーチャート描画
-    function drawGogyoChart(count1, count2) {
+    function drawGogyoChart(data1, data2, count1, count2) {
       const canvas = document.getElementById('gogyoChart');
       const ctx = canvas.getContext('2d');
       const centerX = canvas.width / 2;
