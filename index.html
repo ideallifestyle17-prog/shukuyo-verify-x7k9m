@@ -760,10 +760,12 @@
         totalScore += getGogyoRelationScore(partnerNiganGogyo, g) * count;
       });
       
-      // 0〜50に正規化
+      // 線形変換（+10→50, 0→25, -10→0）
       // 最大値は（自分日干が相手全体6つ全部相生で+2×6=12）+（相手日干が自分全体6つ全部相生で+2×6=12）= 24
-      const maxScore = 24;
-      const normalizedScore = Math.round((totalScore / maxScore) * 50);
+      // 最小値は（自分日干が相手全体6つ全部相剋で-2×6=-12）+（相手日干が自分全体6つ全部相剋で-2×6=-12）= -24
+      // ユーザーの例では+4が29点になるので、以下の式で計算
+      // 点数 = 25 + (totalScore / 10) * 25
+      const normalizedScore = Math.round(25 + (totalScore / 10) * 25);
       
       return Math.min(50, Math.max(0, normalizedScore));
     }
@@ -828,16 +830,40 @@
     
     // 不足五行補完（20点）
     function calculateDeficiencyCompat(count1, count2) {
-      // ユーザーの最も少ない五行
+      // 自分の最も少ない五行
       const myMinGogyo = Object.keys(count1).reduce((a, b) => count1[a] < count1[b] ? a : b);
       const myMinCount = count1[myMinGogyo];
       
-      // 相手がその五行を持っているか
-      const partnerHas = count2[myMinGogyo];
+      // 相手の最も少ない五行
+      const partnerMinGogyo = Object.keys(count2).reduce((a, b) => count2[a] < count2[b] ? a : b);
+      const partnerMinCount = count2[partnerMinGogyo];
       
-      if (partnerHas >= 2) return 20;
-      if (partnerHas === 1) return 10;
-      return 0;
+      // 自分の不足を相手が持っているか
+      let myScore = 0;
+      if (myMinCount === 0) {
+        const partnerHas = count2[myMinGogyo];
+        if (partnerHas >= 2) myScore = 20;
+        else if (partnerHas === 1) myScore = 10;
+      } else if (myMinCount === 1) {
+        const partnerHas = count2[myMinGogyo];
+        if (partnerHas >= 2) myScore = 10;
+      }
+      
+      // 相手の不足を自分が持っているか
+      let partnerScore = 0;
+      if (partnerMinCount === 0) {
+        const myHas = count1[partnerMinGogyo];
+        if (myHas >= 2) partnerScore = 20;
+        else if (myHas === 1) partnerScore = 10;
+      } else if (partnerMinCount === 1) {
+        const myHas = count1[partnerMinGogyo];
+        if (myHas >= 2) partnerScore = 10;
+      }
+      
+      // 相互補完のスコア（平均を取る）
+      const totalScore = Math.round((myScore + partnerScore) / 2);
+      
+      return totalScore;
     }
 
     // 旧暦日付をフォーマット
