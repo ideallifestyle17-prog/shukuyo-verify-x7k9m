@@ -135,6 +135,42 @@
       color: #333;
     }
     
+    /* 五行テーブル */
+    .gogyo-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .gogyo-table th,
+    .gogyo-table td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #eee;
+    }
+    .gogyo-table th {
+      background: #f5f5f5;
+      font-size: 12px;
+      color: #888;
+      font-weight: normal;
+    }
+    .gogyo-table th.row-header {
+      background: #f0f0f0;
+      color: #666;
+      font-weight: bold;
+    }
+    .gogyo-table td {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .gogyo-table .gogyo-wood { color: #2e7d32; }
+    .gogyo-table .gogyo-fire { color: #c62828; }
+    .gogyo-table .gogyo-earth { color: #8d6e63; }
+    .gogyo-table .gogyo-metal { color: #757575; }
+    .gogyo-table .gogyo-water { color: #1565c0; }
+    
     /* 相性セクション */
     .section-title {
       font-size: 20px;
@@ -249,20 +285,26 @@
     <div class="shuku-reading" id="shukuReading"></div>
     <div class="detail">
       <p><strong>旧暦:</strong> <span id="lunarDate"></span></p>
-      <div class="ganshi-group">
-        <div class="ganshi-item">
-          <div class="ganshi-label">年干支</div>
-          <div class="ganshi-value" id="yearGanshi"></div>
-        </div>
-        <div class="ganshi-item">
-          <div class="ganshi-label">月干支</div>
-          <div class="ganshi-value" id="monthGanshi"></div>
-        </div>
-        <div class="ganshi-item">
-          <div class="ganshi-label">日干支</div>
-          <div class="ganshi-value" id="dayGanshi"></div>
-        </div>
-      </div>
+      <table class="gogyo-table">
+        <tr>
+          <th></th>
+          <th>日柱</th>
+          <th>月柱</th>
+          <th>年柱</th>
+        </tr>
+        <tr>
+          <th class="row-header">干</th>
+          <td id="dayGan"></td>
+          <td id="monthGan"></td>
+          <td id="yearGan"></td>
+        </tr>
+        <tr>
+          <th class="row-header">支</th>
+          <td id="dayShi"></td>
+          <td id="monthShi"></td>
+          <td id="yearShi"></td>
+        </tr>
+      </table>
     </div>
   </div>
   
@@ -382,11 +424,55 @@
       document.getElementById('shukuName').textContent = data.s;
       document.getElementById('shukuReading').textContent = SHUKU_READINGS[data.s] || '';
       document.getElementById('lunarDate').textContent = formatLunarDate(data.l);
-      document.getElementById('yearGanshi').textContent = data.y;
-      document.getElementById('monthGanshi').textContent = data.m;
-      document.getElementById('dayGanshi').textContent = data.d;
+      
+      // 干支を分離して五行を表示
+      displayGanShi('year', data.y);
+      displayGanShi('month', data.m);
+      displayGanShi('day', data.d);
       
       document.getElementById('result').classList.add('show');
+    }
+    
+    // 干 → 五行
+    const GAN_GOGYO = {
+      '甲': '木', '乙': '木',
+      '丙': '火', '丁': '火',
+      '戊': '土', '己': '土',
+      '庚': '金', '辛': '金',
+      '壬': '水', '癸': '水'
+    };
+    
+    // 支 → 五行
+    const SHI_GOGYO = {
+      '子': '水', '丑': '土', '寅': '木', '卯': '木',
+      '辰': '土', '巳': '火', '午': '火', '未': '土',
+      '申': '金', '酉': '金', '戌': '土', '亥': '水'
+    };
+    
+    // 五行 → CSSクラス
+    const GOGYO_CLASS = {
+      '木': 'gogyo-wood',
+      '火': 'gogyo-fire',
+      '土': 'gogyo-earth',
+      '金': 'gogyo-metal',
+      '水': 'gogyo-water'
+    };
+    
+    // 干支を分離して表示
+    function displayGanShi(type, ganshi) {
+      const gan = ganshi[0];
+      const shi = ganshi[1];
+      const ganGogyo = GAN_GOGYO[gan];
+      const shiGogyo = SHI_GOGYO[shi];
+      
+      const ganEl = document.getElementById(type + 'Gan');
+      const shiEl = document.getElementById(type + 'Shi');
+      
+      ganEl.textContent = `${gan}（${ganGogyo}）`;
+      ganEl.className = GOGYO_CLASS[ganGogyo];
+      
+      shiEl.textContent = `${shi}（${shiGogyo}）`;
+      shiEl.className = GOGYO_CLASS[shiGogyo];
     }
 
     // 旧暦日付をフォーマット
