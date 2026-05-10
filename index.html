@@ -336,6 +336,9 @@
         <div class="person-label">自分の生年月日</div>
         <input type="date" id="gogyo1Date" value="1994-02-21" min="1900-01-01" max="2099-12-31">
       </div>
+      <div class="person-input" style="display: flex; align-items: center;">
+        <button onclick="swapDates()" style="padding: 8px 12px; font-size: 18px; cursor: pointer; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px;" title="入れ替え">⇄</button>
+      </div>
       <div class="person-input">
         <div class="person-label">相手の生年月日</div>
         <input type="date" id="gogyo2Date" value="1990-01-01" min="1900-01-01" max="2099-12-31">
@@ -555,6 +558,15 @@
       count[SHI_GOGYO[data.d[1]]]++;
       
       return count;
+    }
+    
+    // 生年月日入れ替え
+    function swapDates() {
+      const date1 = document.getElementById('gogyo1Date');
+      const date2 = document.getElementById('gogyo2Date');
+      const temp = date1.value;
+      date1.value = date2.value;
+      date2.value = temp;
     }
     
     // 五行相性計算
@@ -874,27 +886,29 @@
     
     // 不足五行補完（20点）- 自分の不足を相手が補えるか
     function calculateDeficiencyCompat(count1, count2) {
-      // 自分の最も少ない五行を「不足五行」とする
       const gogyoList = ['木', '火', '土', '金', '水'];
-      let minGogyo = gogyoList[0];
-      let minCount = count1[minGogyo];
       
-      gogyoList.forEach(g => {
-        if (count1[g] < minCount) {
-          minCount = count1[g];
-          minGogyo = g;
-        }
-      });
+      // 不足五行 = 0または1の五行
+      const deficientList = gogyoList.filter(g => count1[g] <= 1);
+      console.log('自分の不足五行:', deficientList);
       
-      console.log('自分の不足五行:', minGogyo, '(', minCount, ')');
+      if (deficientList.length === 0) {
+        // 不足なし = 満点
+        return 20;
+      }
       
-      // 相手がその五行を持つか
-      const partnerHas = count2[minGogyo];
-      console.log('相手の所持数:', partnerHas);
+      // 補完数 = 相手が1個以上持つ不足五行の数
+      const complementCount = deficientList.filter(g => count2[g] >= 1).length;
+      console.log('補完数:', complementCount, '/', deficientList.length);
       
-      if (partnerHas >= 2) return 20;
-      if (partnerHas === 1) return 10;
-      return 0;
+      // 補完率 = 補完数 / 不足五行数
+      const complementRate = complementCount / deficientList.length;
+      
+      // 点数化（0〜20点）
+      const score = Math.round(complementRate * 20);
+      console.log('不足補完スコア:', score);
+      
+      return score;
     }
 
     // ========== 相性計算 ==========
