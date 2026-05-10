@@ -886,14 +886,22 @@
         '金': '木'
       };
       
-      // ① 基礎点
+      // ① 基礎点（自分視点で非対称評価）
       let baseScore = 25; // 無関係
       if (nigan1 === nigan2) {
         baseScore = 35; // 同じ
-      } else if (sosei[nigan1] === nigan2 || sosei[nigan2] === nigan1) {
-        baseScore = 40; // 相生
-      } else if (sokoku[nigan1] === nigan2 || sokoku[nigan2] === nigan1) {
-        baseScore = 10; // 相剋
+      } else if (sosei[nigan2] === nigan1) {
+        // 相手が自分を生む（相生される）
+        baseScore = 40;
+      } else if (sosei[nigan1] === nigan2) {
+        // 自分が相手を生む
+        baseScore = 32;
+      } else if (sokoku[nigan1] === nigan2) {
+        // 自分が相手を剋す（主導権を持つ）
+        baseScore = 25;
+      } else if (sokoku[nigan2] === nigan1) {
+        // 相手が自分を剋す（ストレス）
+        baseScore = 10;
       }
       
       // ② 補正（自分の日干に対して、相手命式内のサポート/相剋五行の数を見る）
