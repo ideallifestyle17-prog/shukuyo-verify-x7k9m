@@ -826,9 +826,9 @@
           
           if (c1 === 0 || c2 === 0) return;
           
-          // 同じ五行 +3
+          // 同じ五行 +2
           if (g1 === g2) {
-            rawScore += Math.min(c1, c2) * 3;
+            rawScore += Math.min(c1, c2) * 2;
           }
           // 相生 +2
           else if (sosei[g1] === g2 || sosei[g2] === g1) {
