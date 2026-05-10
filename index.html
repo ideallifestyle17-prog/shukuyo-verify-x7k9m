@@ -818,25 +818,36 @@
       
       let rawScore = 0;
       
-      // 各五行ペアを比較
-      gogyoList.forEach(g1 => {
-        gogyoList.forEach(g2 => {
-          const c1 = count1[g1];
-          const c2 = count2[g2];
+      // 自分視点で評価（自分の各五行に対して、相手の各五行がどう作用するか）
+      gogyoList.forEach(myGogyo => {
+        const myCount = count1[myGogyo];
+        if (myCount === 0) return;
+        
+        gogyoList.forEach(partnerGogyo => {
+          const partnerCount = count2[partnerGogyo];
+          if (partnerCount === 0) return;
           
-          if (c1 === 0 || c2 === 0) return;
+          const weight = Math.sqrt(myCount * partnerCount);
           
           // 同じ五行 +2
-          if (g1 === g2) {
-            rawScore += Math.min(c1, c2) * 2;
+          if (myGogyo === partnerGogyo) {
+            rawScore += weight * 2;
           }
-          // 相生 +2
-          else if (sosei[g1] === g2 || sosei[g2] === g1) {
-            rawScore += Math.sqrt(c1 * c2) * 2;
+          // 相手が自分を生む（相生される）+3
+          else if (sosei[partnerGogyo] === myGogyo) {
+            rawScore += weight * 3;
           }
-          // 相剋 -4
-          else if (sokoku[g1] === g2 || sokoku[g2] === g1) {
-            rawScore -= Math.sqrt(c1 * c2) * 4;
+          // 自分が相手を生む +1
+          else if (sosei[myGogyo] === partnerGogyo) {
+            rawScore += weight * 1;
+          }
+          // 自分が相手を剋す 0
+          else if (sokoku[myGogyo] === partnerGogyo) {
+            rawScore += 0;
+          }
+          // 相手が自分を剋す -4
+          else if (sokoku[partnerGogyo] === myGogyo) {
+            rawScore -= weight * 4;
           }
           // 無関係 0
         });
