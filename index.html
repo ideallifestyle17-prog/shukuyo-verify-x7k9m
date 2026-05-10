@@ -826,21 +826,19 @@
           
           if (c1 === 0 || c2 === 0) return;
           
-          // 同じ五行
+          // 同じ五行 +3
           if (g1 === g2) {
-            // 過剰にならないよう、min(c1, c2)で調整
-            rawScore += Math.min(c1, c2) * 1;
+            rawScore += Math.min(c1, c2) * 3;
           }
-          // 相生（g1→g2 または g2→g1）
+          // 相生 +2
           else if (sosei[g1] === g2 || sosei[g2] === g1) {
-            // 過剰にならないよう、sqrt(c1 * c2)で調整
-            rawScore += Math.sqrt(c1 * c2) * 1;
+            rawScore += Math.sqrt(c1 * c2) * 2;
           }
-          // 相剋（g1→g2 または g2→g1）
+          // 相剋 -4
           else if (sokoku[g1] === g2 || sokoku[g2] === g1) {
-            rawScore -= Math.sqrt(c1 * c2) * 2;
+            rawScore -= Math.sqrt(c1 * c2) * 4;
           }
-          // 無関係は0
+          // 無関係 0
         });
       });
       
