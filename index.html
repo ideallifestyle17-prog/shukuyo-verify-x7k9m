@@ -703,17 +703,18 @@
       
       ctx.clearRect(0, 0, width, height);
       
-      const barWidth = 18;
-      const gap = 12;
-      const groupWidth = barWidth * 2 + 4;
-      const totalWidth = groupWidth * 5 + gap * 4;
+      const barWidth = 20;
+      const barGap = 4;
+      const groupGap = 20;
+      const groupWidth = barWidth * 2 + barGap;
+      const totalWidth = groupWidth * 5 + groupGap * 4;
       const startX = (width - totalWidth) / 2;
       const maxBarHeight = 100;
       const maxValue = 4;
       const baseY = height - 25;
       
       gogyoOrder.forEach((g, i) => {
-        const x = startX + i * (groupWidth + gap);
+        const x = startX + i * (groupWidth + groupGap);
         
         // 自分の棒（左）
         const h1 = (count1[g] / maxValue) * maxBarHeight;
@@ -723,7 +724,7 @@
         // 相手の棒（右）
         const h2 = (count2[g] / maxValue) * maxBarHeight;
         ctx.fillStyle = 'rgba(194, 24, 91, 0.7)';
-        ctx.fillRect(x + barWidth + 4, baseY - h2, barWidth, h2);
+        ctx.fillRect(x + barWidth + barGap, baseY - h2, barWidth, h2);
         
         // ラベル
         ctx.fillStyle = gogyoColors[g];
@@ -736,7 +737,7 @@
         ctx.font = '10px sans-serif';
         ctx.fillText(count1[g], x + barWidth / 2, baseY - h1 - 5);
         ctx.fillStyle = '#c2185b';
-        ctx.fillText(count2[g], x + barWidth + 4 + barWidth / 2, baseY - h2 - 5);
+        ctx.fillText(count2[g], x + barWidth + barGap + barWidth / 2, baseY - h2 - 5);
       });
       
       // 凡例
