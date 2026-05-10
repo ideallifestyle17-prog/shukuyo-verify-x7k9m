@@ -397,7 +397,15 @@
     </div>
     
     <!-- レーダーチャート -->
+    <!-- 五行バランス比較（棒グラフ） -->
+    <div style="margin: 20px 0;">
+      <div style="font-size: 14px; color: #888; margin-bottom: 10px; text-align: center;">五行バランス比較</div>
+      <canvas id="gogyoBarChart" width="300" height="200"></canvas>
+    </div>
+    
+    <!-- 合計レーダーチャート -->
     <div style="text-align: center; margin: 30px 0;">
+      <div style="font-size: 14px; color: #888; margin-bottom: 10px;">2人の五行合計</div>
       <canvas id="gogyoChart" width="300" height="300"></canvas>
     </div>
     
@@ -615,17 +623,17 @@
         total[g] = count1[g] + count2[g];
       });
       
-      // 最大値（4に固定、それ以上ははみ出す）
-      const maxValue = 4;
+      // 最大値（6に固定、それ以上ははみ出す）
+      const maxValue = 6;
       
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       // 背景の正五角形（グリッド）
-      for (let level = 1; level <= 4; level++) {
+      for (let level = 1; level <= 6; level++) {
         ctx.beginPath();
         for (let i = 0; i < 5; i++) {
           const angle = (i * 72 - 90) * Math.PI / 180;
-          const r = (maxRadius / 4) * level;
+          const r = (maxRadius / 6) * level;
           const x = centerX + r * Math.cos(angle);
           const y = centerY + r * Math.sin(angle);
           if (i === 0) ctx.moveTo(x, y);
@@ -659,25 +667,7 @@
         ctx.fillText(g, x, y);
       }
       
-      // 自分の五行（下層）
-      ctx.beginPath();
-      for (let i = 0; i < 5; i++) {
-        const angle = (i * 72 - 90) * Math.PI / 180;
-        const g = gogyoOrder[i];
-        const r = (count1[g] / maxValue) * maxRadius;
-        const x = centerX + r * Math.cos(angle);
-        const y = centerY + r * Math.sin(angle);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(21, 101, 192, 0.3)';
-      ctx.fill();
-      ctx.strokeStyle = '#1565c0';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // 相手の五行（上層、積み上げ）
+      // 2人の合計（レーダーチャート）
       ctx.beginPath();
       for (let i = 0; i < 5; i++) {
         const angle = (i * 72 - 90) * Math.PI / 180;
@@ -689,16 +679,76 @@
         else ctx.lineTo(x, y);
       }
       ctx.closePath();
-      ctx.fillStyle = 'rgba(194, 24, 91, 0.3)';
+      ctx.fillStyle = 'rgba(102, 126, 234, 0.3)';
       ctx.fill();
-      ctx.strokeStyle = '#c2185b';
+      ctx.strokeStyle = '#667eea';
       ctx.lineWidth = 2;
       ctx.stroke();
+      
+      // 棒グラフを描画
+      drawGogyoBarChart(count1, count2, gogyoOrder, gogyoColors);
       
       // 新しいスコア計算（3項目合計100点）
       const scores = calculateNewGogyoScore(data1, data2, count1, count2);
       
       return scores.total;
+    }
+    
+    // 棒グラフ描画
+    function drawGogyoBarChart(count1, count2, gogyoOrder, gogyoColors) {
+      const canvas = document.getElementById('gogyoBarChart');
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      ctx.clearRect(0, 0, width, height);
+      
+      const barWidth = 25;
+      const gap = 35;
+      const startX = 25;
+      const maxBarHeight = 120;
+      const maxValue = 4;
+      const baseY = height - 30;
+      
+      gogyoOrder.forEach((g, i) => {
+        const x = startX + i * (barWidth * 2 + gap);
+        
+        // 自分の棒（左）
+        const h1 = (count1[g] / maxValue) * maxBarHeight;
+        ctx.fillStyle = 'rgba(21, 101, 192, 0.7)';
+        ctx.fillRect(x, baseY - h1, barWidth, h1);
+        
+        // 相手の棒（右）
+        const h2 = (count2[g] / maxValue) * maxBarHeight;
+        ctx.fillStyle = 'rgba(194, 24, 91, 0.7)';
+        ctx.fillRect(x + barWidth + 2, baseY - h2, barWidth, h2);
+        
+        // ラベル
+        ctx.fillStyle = gogyoColors[g];
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(g, x + barWidth + 1, baseY + 15);
+        
+        // 数値
+        ctx.fillStyle = '#1565c0';
+        ctx.font = '10px sans-serif';
+        ctx.fillText(count1[g], x + barWidth / 2, baseY - h1 - 5);
+        ctx.fillStyle = '#c2185b';
+        ctx.fillText(count2[g], x + barWidth + 2 + barWidth / 2, baseY - h2 - 5);
+      });
+      
+      // 凡例
+      ctx.fillStyle = 'rgba(21, 101, 192, 0.7)';
+      ctx.fillRect(10, 5, 12, 12);
+      ctx.fillStyle = '#333';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('自分', 25, 14);
+      
+      ctx.fillStyle = 'rgba(194, 24, 91, 0.7)';
+      ctx.fillRect(55, 5, 12, 12);
+      ctx.fillStyle = '#333';
+      ctx.fillText('相手', 70, 14);
     }
     
     // 新しい五行相性計算（3項目合計100点）
