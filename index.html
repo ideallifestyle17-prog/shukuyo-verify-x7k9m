@@ -770,11 +770,11 @@
       return Math.min(50, Math.max(0, normalizedScore));
     }
     
-    // 五行関係のスコア
-    function getGogyoRelationScore(gogyo1, gogyo2) {
-      if (gogyo1 === gogyo2) return 1; // 同じ五行
+    // 五行関係のスコア（日干から見た関係）
+    function getGogyoRelationScore(nigan, target) {
+      if (nigan === target) return 1; // 同じ五行
       
-      // 相生（右回り）
+      // 相生（日干が生む or 日干を生む）
       const sosei = {
         '木': '火',
         '火': '土',
@@ -782,10 +782,12 @@
         '金': '水',
         '水': '木'
       };
-      if (sosei[gogyo1] === gogyo2) return 2; // 相生
-      if (sosei[gogyo2] === gogyo1) return 2; // 逆も相生
+      // 日干→target（日干が生む）
+      if (sosei[nigan] === target) return 2;
+      // target→日干（日干を生む）
+      if (sosei[target] === nigan) return 2;
       
-      // 相剋
+      // 相剋（日干が剋す or 日干を剋す）
       const sokoku = {
         '木': '土',
         '土': '水',
@@ -793,7 +795,8 @@
         '火': '金',
         '金': '木'
       };
-      if (sokoku[gogyo1] === gogyo2 || sokoku[gogyo2] === gogyo1) return -2;
+      // 日干→target（日干が剋す）or target→日干（日干を剋す）
+      if (sokoku[nigan] === target || sokoku[target] === nigan) return -2;
       
       return 0; // 無関係
     }
@@ -830,51 +833,28 @@
     
     // 不足五行補完（20点）
     function calculateDeficiencyCompat(count1, count2) {
-      // 自分の最も少ない五行
-      const myMinGogyo = Object.keys(count1).reduce((a, b) => count1[a] < count1[b] ? a : b);
-      const myMinCount = count1[myMinGogyo];
+      // 自分の不足五行（0のもの全て）
+      const myDeficient = Object.keys(count1).filter(g => count1[g] === 0);
       
-      // 相手の最も少ない五行
-      const partnerMinGogyo = Object.keys(count2).reduce((a, b) => count2[a] < count2[b] ? a : b);
-      const partnerMinCount = count2[partnerMinGogyo];
+      // 相手の不足五行（0のもの全て）
+      const partnerDeficient = Object.keys(count2).filter(g => count2[g] === 0);
       
-      // 自分の不足を相手が持っているか
-      let myScore = 0;
-      if (myMinCount === 0) {
-        const partnerHas = count2[myMinGogyo];
-        if (partnerHas >= 2) myScore = 20;
-        else if (partnerHas === 1) myScore = 10;
-      } else if (myMinCount === 1) {
-        const partnerHas = count2[myMinGogyo];
-        if (partnerHas >= 2) myScore = 10;
-      }
+      // 自分の不足を相手が補完できるか
+      let myComplement = false;
+      myDeficient.forEach(g => {
+        if (count2[g] >= 2) myComplement = true;
+      });
       
-      // 相手の不足を自分が持っているか
-      let partnerScore = 0;
-      if (partnerMinCount === 0) {
-        const myHas = count1[partnerMinGogyo];
-        if (myHas >= 2) partnerScore = 20;
-        else if (myHas === 1) partnerScore = 10;
-      } else if (partnerMinCount === 1) {
-        const myHas = count1[partnerMinGogyo];
-        if (myHas >= 2) partnerScore = 10;
-      }
+      // 相手の不足を自分が補完できるか
+      let partnerComplement = false;
+      partnerDeficient.forEach(g => {
+        if (count1[g] >= 2) partnerComplement = true;
+      });
       
-      // 相互補完のスコア（平均を取る）
-      const totalScore = Math.round((myScore + partnerScore) / 2);
-      
-      return totalScore;
-    }
-
-    // 旧暦日付をフォーマット
-    function formatLunarDate(lunarStr) {
-      // "1994-01-12" or "2020-閏04-01" 形式
-      const match = lunarStr.match(/^(\d+)-(閏)?(\d+)-(\d+)$/);
-      if (match) {
-        const [, year, leap, month, day] = match;
-        return `${year}年${leap || ''}${parseInt(month)}月${parseInt(day)}日`;
-      }
-      return lunarStr;
+      // 両方強く補完 → 20点、片方のみ → 10点、なし → 0点
+      if (myComplement && partnerComplement) return 20;
+      if (myComplement || partnerComplement) return 10;
+      return 0;
     }
 
     // ========== 相性計算 ==========
