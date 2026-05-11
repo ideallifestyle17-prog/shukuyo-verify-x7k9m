@@ -780,29 +780,37 @@
       '癸': { '甲': 3, '乙': 3.5, '丙': 1, '丁': 1, '戊': 5, '己': 3, '庚': 3, '辛': 2.5, '壬': 3, '癸': 3 }
     };
     
-    // 新しい五行相性計算（2項目合計100点）
+    // 陰陽判定
+    const YIN_GAN = ['乙', '丁', '己', '辛', '癸'];
+    const YANG_GAN = ['甲', '丙', '戊', '庚', '壬'];
+    
+    // 新しい五行相性計算（3項目合計100点）
     function calculateNewGogyoScore(data1, data2, count1, count2) {
-      // 日干相性（80点）
+      // 日干相性（70点）
       const niganScore = calculateNiganCompat(data1, data2);
       
-      // 五行バランス（20点）
-      const balanceScore = calculateBalanceScore(count1, count2);
+      // 五行バランス補完（20点）
+      const balanceScore = calculateBalanceComplement(count1, count2);
       
-      const total = niganScore + balanceScore;
+      // 陰陽補完（10点）
+      const yinyangScore = calculateYinYangComplement(data1, data2);
+      
+      const total = niganScore + balanceScore + yinyangScore;
       
       // 内訳を表示
       document.getElementById('gogyoScore').innerHTML = `
         <div style="font-size: 48px; font-weight: bold; color: #667eea;">${total}点</div>
         <div style="font-size: 12px; color: #888; margin-top: 10px;">
-          日干相性: ${niganScore}/80点<br>
-          五行バランス: ${balanceScore}/20点
+          日干相性: ${niganScore}/70点<br>
+          五行バランス: ${balanceScore}/20点<br>
+          陰陽補完: ${yinyangScore}/10点
         </div>
       `;
       
-      return { total, niganScore, balanceScore };
+      return { total, niganScore, balanceScore, yinyangScore };
     }
     
-    // 日干相性（80点）- マトリックスベース
+    // 日干相性（70点）- マトリックスベース
     function calculateNiganCompat(data1, data2) {
       const nigan1 = data1.d[0]; // 自分の日干（甲乙丙丁...）
       const nigan2 = data2.d[0]; // 相手の日干
@@ -810,41 +818,95 @@
       // マトリックスから評価値を取得（1〜5）
       const rating = NIGAN_MATRIX[nigan1]?.[nigan2] || 3;
       
-      // 点数変換: 5→80, 4→67, 3→55, 2→42, 1→30
-      // 線形補間: score = 30 + (rating - 1) * 12.5
-      const baseScore = Math.round(30 + (rating - 1) * 12.5);
+      // 点数変換: 5→70, 4→60, 3→50, 2→40, 1→30
+      // 線形補間: score = 30 + (rating - 1) * 10
+      const baseScore = Math.round(30 + (rating - 1) * 10);
       
       console.log('日干相性:', nigan1, '→', nigan2, '評価:', rating, '点数:', baseScore);
       
       return baseScore;
     }
     
-    // 五行バランス（20点）- 2人合わせた偏りの少なさ
-    function calculateBalanceScore(count1, count2) {
+    // 五行バランス補完（20点）- 偏差ベースの滑らかなスコア
+    function calculateBalanceComplement(count1, count2) {
       const gogyoList = ['木', '火', '土', '金', '水'];
       
-      // 2人の五行数を合算
-      const combined = {};
+      // 自分の五行割合を算出
+      const total1 = gogyoList.reduce((sum, g) => sum + (count1[g] || 0), 0);
+      const ratio1 = {};
       gogyoList.forEach(g => {
-        combined[g] = (count1[g] || 0) + (count2[g] || 0);
+        ratio1[g] = total1 > 0 ? (count1[g] || 0) / total1 : 0.2;
       });
       
-      // 偏り計算: 最大値 - 最小値
-      const values = Object.values(combined);
-      const spread = Math.max(...values) - Math.min(...values);
+      // 相手の五行割合を算出
+      const total2 = gogyoList.reduce((sum, g) => sum + (count2[g] || 0), 0);
+      const ratio2 = {};
+      gogyoList.forEach(g => {
+        ratio2[g] = total2 > 0 ? (count2[g] || 0) / total2 : 0.2;
+      });
       
-      // スコア変換
-      let score;
-      if (spread <= 1) score = 20;
-      else if (spread === 2) score = 16;
-      else if (spread === 3) score = 12;
-      else if (spread === 4) score = 8;
-      else if (spread === 5) score = 4;
-      else score = 0;
+      let score = 10; // 基礎点（中央値）
       
-      console.log('五行バランス:', combined, '偏り:', spread, '点数:', score);
+      gogyoList.forEach(g => {
+        const myRatio = ratio1[g];
+        const partnerRatio = ratio2[g];
+        
+        // 不足五行（0.15未満）の補完評価
+        if (myRatio < 0.15) {
+          // 相手が持っているほど加点（滑らかに）
+          const deficit = 0.15 - myRatio;
+          const complement = Math.min(partnerRatio, 0.35);
+          score += deficit * complement * 30; // 最大約+1.5点/五行
+        }
+        
+        // 過多五行（0.35超）の悪化評価
+        if (myRatio > 0.35) {
+          // 相手も多いと減点（滑らかに）
+          const excess = myRatio - 0.35;
+          const worsen = Math.max(0, partnerRatio - 0.2);
+          score -= excess * worsen * 25; // 最大約-1点/五行
+        }
+      });
       
-      return score;
+      // 2人合わせた偏差も考慮
+      const combinedTotal = total1 + total2;
+      const combinedRatio = {};
+      gogyoList.forEach(g => {
+        combinedRatio[g] = combinedTotal > 0 ? ((count1[g] || 0) + (count2[g] || 0)) / combinedTotal : 0.2;
+      });
+      
+      // 理想分布との偏差
+      let diff = 0;
+      gogyoList.forEach(g => {
+        diff += Math.abs(combinedRatio[g] - 0.2);
+      });
+      
+      // 偏差が小さいほど加点（diff=0で+5点、diff=1で0点）
+      score += Math.max(0, (1 - diff) * 5);
+      
+      const finalScore = Math.round(Math.min(20, Math.max(0, score)));
+      
+      console.log('五行バランス補完:', '自分割合:', ratio1, '相手割合:', ratio2, '偏差:', diff, '点数:', finalScore);
+      
+      return finalScore;
+    }
+    
+    // 陰陽補完（10点）
+    function calculateYinYangComplement(data1, data2) {
+      const nigan1 = data1.d[0];
+      const nigan2 = data2.d[0];
+      
+      const isYin1 = YIN_GAN.includes(nigan1);
+      const isYin2 = YIN_GAN.includes(nigan2);
+      
+      // 陰陽が異なれば補完成立
+      if (isYin1 !== isYin2) {
+        console.log('陰陽補完:', nigan1, isYin1 ? '陰' : '陽', '←→', nigan2, isYin2 ? '陰' : '陽', '= 補完成立');
+        return 10;
+      }
+      
+      console.log('陰陽補完:', nigan1, isYin1 ? '陰' : '陽', '←→', nigan2, isYin2 ? '陰' : '陽', '= 補完なし');
+      return 0;
     }
 
     // ========== 相性計算 ==========
