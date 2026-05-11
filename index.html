@@ -766,186 +766,83 @@
       ctx.fillText('相手', 70, 14);
     }
     
-    // 新しい五行相性計算（3項目合計100点）
+    // 日干相性マトリックス（1〜5の5段階評価）
+    const NIGAN_MATRIX = {
+      '甲': { '甲': 3, '乙': 2, '丙': 3.5, '丁': 4, '戊': 2.5, '己': 4.5, '庚': 2, '辛': 1.5, '壬': 2, '癸': 5 },
+      '乙': { '甲': 3, '乙': 1.5, '丙': 3.5, '丁': 2.5, '戊': 2.5, '己': 4, '庚': 4.5, '辛': 2, '壬': 3, '癸': 4 },
+      '丙': { '甲': 4, '乙': 4, '丙': 2.5, '丁': 2, '戊': 3, '己': 2.5, '庚': 2.5, '辛': 5, '壬': 2.5, '癸': 1 },
+      '丁': { '甲': 4, '乙': 3.5, '丙': 2.5, '丁': 3, '戊': 3.5, '己': 2, '庚': 4, '辛': 1.5, '壬': 5, '癸': 1 },
+      '戊': { '甲': 2.5, '乙': 4, '丙': 4, '丁': 3.5, '戊': 1.5, '己': 4.5, '庚': 2, '辛': 2, '壬': 2.5, '癸': 5 },
+      '己': { '甲': 4.5, '乙': 3, '丙': 2.5, '丁': 3, '戊': 4, '己': 3.5, '庚': 2.5, '辛': 1.5, '壬': 1.5, '癸': 2 },
+      '庚': { '甲': 3, '乙': 5, '丙': 2.5, '丁': 3.5, '戊': 2.5, '己': 3, '庚': 2.5, '辛': 2, '壬': 1.5, '癸': 1 },
+      '辛': { '甲': 1, '乙': 1, '丙': 5, '丁': 1.5, '戊': 3.5, '己': 2, '庚': 1, '辛': 2, '壬': 4, '癸': 2 },
+      '壬': { '甲': 2.5, '乙': 2.5, '丙': 4, '丁': 4.5, '戊': 3.5, '己': 1, '庚': 3, '辛': 5, '壬': 2, '癸': 2 },
+      '癸': { '甲': 3, '乙': 3.5, '丙': 1, '丁': 1, '戊': 5, '己': 3, '庚': 3, '辛': 2.5, '壬': 3, '癸': 3 }
+    };
+    
+    // 新しい五行相性計算（2項目合計100点）
     function calculateNewGogyoScore(data1, data2, count1, count2) {
-      // 日干相性（50点）
-      const niganScore = calculateNiganCompat(data1, data2, count2);
+      // 日干相性（80点）
+      const niganScore = calculateNiganCompat(data1, data2);
       
-      // 五行相性（30点）
-      const gogyoScore = calculateGogyoRelationScore(data1, data2, count1, count2);
+      // 五行バランス（20点）
+      const balanceScore = calculateBalanceScore(count1, count2);
       
-      // 不足五行補完（20点）
-      const deficiencyScore = calculateDeficiencyCompat(count1, count2);
-      
-      const total = niganScore + gogyoScore + deficiencyScore;
+      const total = niganScore + balanceScore;
       
       // 内訳を表示
       document.getElementById('gogyoScore').innerHTML = `
         <div style="font-size: 48px; font-weight: bold; color: #667eea;">${total}点</div>
         <div style="font-size: 12px; color: #888; margin-top: 10px;">
-          日干相性: ${niganScore}/50点<br>
-          五行相性: ${gogyoScore}/30点<br>
-          不足補完: ${deficiencyScore}/20点
+          日干相性: ${niganScore}/80点<br>
+          五行バランス: ${balanceScore}/20点
         </div>
       `;
       
-      return { total, niganScore, gogyoScore, deficiencyScore };
+      return { total, niganScore, balanceScore };
     }
     
-    // 五行相性（30点）- 命式全体の五行構成同士を比較
-    function calculateGogyoRelationScore(data1, data2, count1, count2) {
-      console.log('calculateGogyoRelationScore:', count1, count2);
+    // 日干相性（80点）- マトリックスベース
+    function calculateNiganCompat(data1, data2) {
+      const nigan1 = data1.d[0]; // 自分の日干（甲乙丙丁...）
+      const nigan2 = data2.d[0]; // 相手の日干
       
+      // マトリックスから評価値を取得（1〜5）
+      const rating = NIGAN_MATRIX[nigan1]?.[nigan2] || 3;
+      
+      // 点数変換: 5→80, 4→67, 3→55, 2→42, 1→30
+      // 線形補間: score = 30 + (rating - 1) * 12.5
+      const baseScore = Math.round(30 + (rating - 1) * 12.5);
+      
+      console.log('日干相性:', nigan1, '→', nigan2, '評価:', rating, '点数:', baseScore);
+      
+      return baseScore;
+    }
+    
+    // 五行バランス（20点）- 2人合わせた偏りの少なさ
+    function calculateBalanceScore(count1, count2) {
       const gogyoList = ['木', '火', '土', '金', '水'];
       
-      // 相生関係
-      const sosei = {
-        '木': '火',
-        '火': '土',
-        '土': '金',
-        '金': '水',
-        '水': '木'
-      };
-      
-      // 相剋関係
-      const sokoku = {
-        '木': '土',
-        '土': '水',
-        '水': '火',
-        '火': '金',
-        '金': '木'
-      };
-      
-      let rawScore = 0;
-      
-      // 自分視点で評価（自分の各五行に対して、相手の各五行がどう作用するか）
-      gogyoList.forEach(myGogyo => {
-        const myCount = count1[myGogyo];
-        if (myCount === 0) return;
-        
-        gogyoList.forEach(partnerGogyo => {
-          const partnerCount = count2[partnerGogyo];
-          if (partnerCount === 0) return;
-          
-          const weight = Math.sqrt(myCount * partnerCount);
-          
-          // 同じ五行 +2
-          if (myGogyo === partnerGogyo) {
-            rawScore += weight * 2;
-          }
-          // 相手が自分を生む（相生される）+3
-          else if (sosei[partnerGogyo] === myGogyo) {
-            rawScore += weight * 3;
-          }
-          // 自分が相手を生む +1
-          else if (sosei[myGogyo] === partnerGogyo) {
-            rawScore += weight * 1;
-          }
-          // 自分が相手を剋す 0
-          else if (sokoku[myGogyo] === partnerGogyo) {
-            rawScore += 0;
-          }
-          // 相手が自分を剋す -4
-          else if (sokoku[partnerGogyo] === myGogyo) {
-            rawScore -= weight * 4;
-          }
-          // 無関係 0
-        });
+      // 2人の五行数を合算
+      const combined = {};
+      gogyoList.forEach(g => {
+        combined[g] = (count1[g] || 0) + (count2[g] || 0);
       });
       
-      console.log('五行相性 rawScore:', rawScore);
+      // 偏り計算: 最大値 - 最小値
+      const values = Object.values(combined);
+      const spread = Math.max(...values) - Math.min(...values);
       
-      // 正規化（中央値12になるよう調整）
-      // rawScoreの範囲は概ね-20〜+20程度
-      // 12 + rawScore * 0.9 で 0〜30に収める
-      const normalizedScore = Math.round(12 + rawScore * 0.9);
+      // スコア変換
+      let score;
+      if (spread <= 1) score = 20;
+      else if (spread === 2) score = 16;
+      else if (spread === 3) score = 12;
+      else if (spread === 4) score = 8;
+      else if (spread === 5) score = 4;
+      else score = 0;
       
-      return Math.min(30, Math.max(0, normalizedScore));
-    }
-    
-    // 日干相性（50点）
-    function calculateNiganCompat(data1, data2, count2) {
-      const nigan1 = GAN_GOGYO[data1.d[0]];
-      const nigan2 = GAN_GOGYO[data2.d[0]];
-      
-      // 相生関係（A→Bで、AがBを生む）
-      const sosei = {
-        '木': '火',
-        '火': '土',
-        '土': '金',
-        '金': '水',
-        '水': '木'
-      };
-      
-      // 相剋関係（A→Bで、AがBを剋す）
-      const sokoku = {
-        '木': '土',
-        '土': '水',
-        '水': '火',
-        '火': '金',
-        '金': '木'
-      };
-      
-      // ① 基礎点（自分視点で非対称評価）
-      let baseScore = 25; // 無関係
-      if (nigan1 === nigan2) {
-        baseScore = 35; // 同じ
-      } else if (sosei[nigan2] === nigan1) {
-        // 相手が自分を生む（相生される）
-        baseScore = 40;
-      } else if (sosei[nigan1] === nigan2) {
-        // 自分が相手を生む
-        baseScore = 32;
-      } else if (sokoku[nigan1] === nigan2) {
-        // 自分が相手を剋す（主導権を持つ）
-        baseScore = 25;
-      } else if (sokoku[nigan2] === nigan1) {
-        // 相手が自分を剋す（ストレス）
-        baseScore = 10;
-      }
-      
-      // ② 補正（自分の日干に対して、相手命式内のサポート/相剋五行の数を見る）
-      // 自分の日干を生む五行（サポート）
-      const supportGogyo = Object.keys(sosei).find(k => sosei[k] === nigan1);
-      // 自分の日干を剋す五行
-      const attackGogyo = Object.keys(sokoku).find(k => sokoku[k] === nigan1);
-      
-      const supportCount = count2[supportGogyo] || 0;
-      const attackCount = count2[attackGogyo] || 0;
-      
-      // 補正値 = (支援五行数 × 2) - (相剋五行数 × 2)
-      const correction = (supportCount * 2) - (attackCount * 2);
-      
-      console.log('日干相性:', nigan1, '基礎:', baseScore, 'サポート:', supportGogyo, supportCount, '相剋:', attackGogyo, attackCount, '補正:', correction);
-      
-      const finalScore = baseScore + correction;
-      
-      return Math.min(50, Math.max(0, finalScore));
-    }
-    
-    // 不足五行補完（20点）- 自分の不足を相手が補えるか
-    function calculateDeficiencyCompat(count1, count2) {
-      const gogyoList = ['木', '火', '土', '金', '水'];
-      
-      // 不足五行 = 0または1の五行
-      const deficientList = gogyoList.filter(g => count1[g] <= 1);
-      console.log('自分の不足五行:', deficientList);
-      
-      if (deficientList.length === 0) {
-        // 不足なし = 満点
-        return 20;
-      }
-      
-      // 補完数 = 相手が1個以上持つ不足五行の数
-      const complementCount = deficientList.filter(g => count2[g] >= 1).length;
-      console.log('補完数:', complementCount, '/', deficientList.length);
-      
-      // 補完率 = 補完数 / 不足五行数
-      const complementRate = complementCount / deficientList.length;
-      
-      // 点数化（0〜20点）
-      const score = Math.round(complementRate * 20);
-      console.log('不足補完スコア:', score);
+      console.log('五行バランス:', combined, '偏り:', spread, '点数:', score);
       
       return score;
     }
