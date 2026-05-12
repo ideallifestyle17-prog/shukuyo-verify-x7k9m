@@ -297,6 +297,9 @@
         <div class="person-label">自分の生年月日</div>
         <input type="date" id="person1Date" value="1994-02-21" min="1900-01-01" max="2099-12-31">
       </div>
+      <div class="person-input" style="display: flex; align-items: center;">
+        <button onclick="swapDates()" style="padding: 8px 12px; font-size: 18px; cursor: pointer; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px;" title="入れ替え">⇄</button>
+      </div>
       <div class="person-input">
         <div class="person-label">相手の生年月日</div>
         <input type="date" id="person2Date" value="1990-01-01" min="1900-01-01" max="2099-12-31">
@@ -329,25 +332,7 @@
   </div>
   
   <!-- 五行セクション -->
-  <div class="section-title">五行</div>
-  
-  <div class="form-group">
-    <div class="person-inputs">
-      <div class="person-input">
-        <div class="person-label">自分の生年月日</div>
-        <input type="date" id="gogyo1Date" value="1994-02-21" min="1900-01-01" max="2099-12-31">
-      </div>
-      <div class="person-input" style="display: flex; align-items: center;">
-        <button onclick="swapDates()" style="padding: 8px 12px; font-size: 18px; cursor: pointer; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px;" title="入れ替え">⇄</button>
-      </div>
-      <div class="person-input">
-        <div class="person-label">相手の生年月日</div>
-        <input type="date" id="gogyo2Date" value="1990-01-01" min="1900-01-01" max="2099-12-31">
-      </div>
-    </div>
-  </div>
-  
-  <button onclick="calculateGogyoCompat()" id="gogyoBtn" disabled>五行相性を計算</button>
+  <div class="section-title">五行詳細</div>
   
   <div class="result" id="gogyoResult">
     <!-- 五行テーブル（自分） -->
@@ -471,7 +456,6 @@
         statusEl.className = 'status ready';
         calcBtn.disabled = false;
         document.getElementById('compatBtn').disabled = false;
-        document.getElementById('gogyoBtn').disabled = false;
       } catch (e) {
         statusEl.textContent = `エラー: ${e.message}`;
         statusEl.className = 'status error';
@@ -563,34 +547,19 @@
     
     // 生年月日入れ替え
     function swapDates() {
-      const date1 = document.getElementById('gogyo1Date');
-      const date2 = document.getElementById('gogyo2Date');
+      const date1 = document.getElementById('person1Date');
+      const date2 = document.getElementById('person2Date');
       const temp = date1.value;
       date1.value = date2.value;
       date2.value = temp;
     }
     
-    // 五行相性計算
-    function calculateGogyoCompat() {
+    // 五行相性計算（data1, data2を引数で受け取る）
+    function calculateGogyoCompat(data1, data2) {
       console.log('calculateGogyoCompat 開始');
       
-      if (!calendarDB) {
-        alert('データベースが読み込まれていません');
-        return;
-      }
-
-      const date1 = document.getElementById('gogyo1Date').value;
-      const date2 = document.getElementById('gogyo2Date').value;
-      
-      console.log('日付:', date1, date2);
-      
-      const data1 = calendarDB[date1];
-      const data2 = calendarDB[date2];
-      
-      console.log('データ:', data1, data2);
-      
       if (!data1 || !data2) {
-        alert('日付のデータが見つかりません。\n対応範囲: 1900-01-01 〜 2099-12-31');
+        console.log('データがありません');
         return;
       }
       
@@ -1135,6 +1104,9 @@
       }
       
       document.getElementById('compatibilityResult').classList.add('show');
+      
+      // 五行詳細も表示
+      calculateGogyoCompat(data1, data2);
     }
     
     // 初期化
