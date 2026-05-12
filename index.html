@@ -768,14 +768,17 @@
       const total = niganScore + balanceScore + yinyangScore;
       
       // 内訳を表示
-      document.getElementById('gogyoScore').innerHTML = `
-        <div style="font-size: 48px; font-weight: bold; color: #667eea;">${total}点</div>
-        <div style="font-size: 12px; color: #888; margin-top: 10px;">
-          日干相性: ${niganScore}/70点<br>
-          五行バランス: ${balanceScore}/20点<br>
-          陰陽補完: ${yinyangScore}/10点
-        </div>
-      `;
+      const gogyoScoreEl = document.getElementById('gogyoScore');
+      if (gogyoScoreEl) {
+        gogyoScoreEl.innerHTML = `
+          <div style="font-size: 48px; font-weight: bold; color: #667eea;">${total}点</div>
+          <div style="font-size: 12px; color: #888; margin-top: 10px;">
+            日干相性: ${niganScore}/70点<br>
+            五行バランス: ${balanceScore}/20点<br>
+            陰陽補完: ${yinyangScore}/10点
+          </div>
+        `;
+      }
       
       return { total, niganScore, balanceScore, yinyangScore };
     }
