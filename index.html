@@ -406,6 +406,8 @@
   </div>
 
   <script>
+    console.log('スクリプト開始');
+    
     // 27宿の読み方
     const SHUKU_READINGS = {
       '昴宿': 'ぼうしゅく',
@@ -484,6 +486,14 @@
       document.getElementById('lunarDate').textContent = formatLunarDate(data.l);
       
       document.getElementById('result').classList.add('show');
+    }
+    
+    // 旧暦日付をフォーマット
+    function formatLunarDate(lunarStr) {
+      if (!lunarStr) return '';
+      // "1994-01-11" → "1994年1月11日"
+      const [year, month, day] = lunarStr.split('-');
+      return `${year}年${parseInt(month)}月${parseInt(day)}日`;
     }
     
     // 干 → 五行
@@ -1113,7 +1123,9 @@
     }
     
     // 初期化
+    console.log('loadDatabase呼び出し前');
     loadDatabase();
+    console.log('loadDatabase呼び出し後');
   </script>
 </body>
 </html>
